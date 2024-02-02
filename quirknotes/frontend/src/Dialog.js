@@ -3,7 +3,7 @@ import './App.css';
 
 const baseNote = {title: "", content: ""}
 
-function Dialog({open, initialNote, closeDialog, postNote: postNoteState}) {
+function Dialog({open, initialNote, closeDialog, postNote: postNoteState, patchNote:patchNoteState}) {
 
     // -- Dialog props --
     const [note, setNote] = useState(baseNote)
@@ -43,7 +43,7 @@ function Dialog({open, initialNote, closeDialog, postNote: postNoteState}) {
                 } else {
                     await response.json().then((data) => {
                         postNoteState(data.insertedId, note.title, note.content)
-                        //setStatus("Note posted!") // Can be replaced with close(), if you want!
+                        setStatus("Note posted!") 
                         close()
                     }) 
                 }
@@ -54,9 +54,36 @@ function Dialog({open, initialNote, closeDialog, postNote: postNoteState}) {
         } 
     }
 
-    const patchNote = (entry) => {
-        // Code for PATCH here
+    const patchNote = async() => {
+        if (!note || !note.title || !note.content) {
+            setStatus("Title and content are required.");
+            return;
+        }
+    
+        setStatus("Updating note...");
+    
+        try {
+            const response = await fetch(`http://localhost:4000/patchNote/${note._id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ title: note.title, content: note.content }),
+            });
+    
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+    
+            setStatus("Note updated successfully.");
+            const updatedNote = await response.json(); 
+            patchNoteState(updatedNote._id, updatedNote.title, updatedNote.content);
+            close();
+        } catch (error) {
+            setStatus(`Error updating note: ${error}`);
+        }
     }
+
 
     return (
         <dialog open={open} style={DialogStyle.dialog}>
